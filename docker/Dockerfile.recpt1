@@ -1,0 +1,46 @@
+ARG ARCH=
+FROM ${ARCH}node:24.18.0-bookworm AS build
+WORKDIR /app
+ENV DOCKER=YES NODE_ENV=production
+ADD . .
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends build-essential && \
+    npm ci --include=dev && \
+    npm run build && \
+    npm ci --omit=dev
+
+FROM ${ARCH}node:24.18.0-bookworm-slim
+WORKDIR /app
+
+ARG LIBARIB25_COMMIT=93ff3afd0a13f42724b20564873066f470825e78
+ARG RECPT1_COMMIT=77c7bce2527e1df45cc8667ede753d09de7b3e6c
+
+RUN set -eux; \
+    runtimePackages="ca-certificates make gcc g++ pkg-config pcscd libpcsclite-dev libccid libdvbv5-dev pcsc-tools dvb-tools"; \
+    buildPackages="autoconf automake build-essential cmake git libtool"; \
+    apt-get update; \
+    apt-get upgrade -y; \
+    apt-get install -y --no-install-recommends ${runtimePackages} ${buildPackages}; \
+    git clone https://github.com/stz2012/libarib25.git /tmp/libarib25; \
+    git -C /tmp/libarib25 checkout "${LIBARIB25_COMMIT}"; \
+    cmake -S /tmp/libarib25 -B /tmp/libarib25/build; \
+    cmake --build /tmp/libarib25/build; \
+    cmake --install /tmp/libarib25/build; \
+    git clone https://github.com/stz2012/recpt1.git /tmp/recpt1; \
+    git -C /tmp/recpt1 checkout "${RECPT1_COMMIT}"; \
+    cd /tmp/recpt1/recpt1; \
+    ./autogen.sh; \
+    ./configure --enable-b25; \
+    make -j"$(nproc)"; \
+    make install; \
+    ldconfig; \
+    test -x /usr/local/bin/recpt1; \
+    rm -rf /tmp/libarib25 /tmp/recpt1; \
+    apt-get purge -y --auto-remove ${buildPackages}; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app /app
+CMD ["./docker/container-init.sh"]
+EXPOSE 40772 9229
