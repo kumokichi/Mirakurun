@@ -20,12 +20,18 @@ import _ from "./_";
 import status from "./status";
 import ChannelItem from "./ChannelItem";
 import { JobItem } from "./Job";
+import EPGGatheringQueue, { DEFAULT_EPG_GATHERING_CONCURRENCY } from "./EPGGatheringQueue";
 
 export class Channel {
     private _items: ChannelItem[] = [];
     private _startup: boolean = true;
+    private _epgGatheringQueue: EPGGatheringQueue;
 
     constructor() {
+        const epgGatheringConcurrency = _.config.server.epgGatheringConcurrency || DEFAULT_EPG_GATHERING_CONCURRENCY;
+        this._epgGatheringQueue = new EPGGatheringQueue(epgGatheringConcurrency);
+        log.info("EPG gathering concurrency: %d", epgGatheringConcurrency);
+
         this._load();
 
         if (_.config.server.disableEITParsing !== true) {
@@ -194,7 +200,7 @@ export class Channel {
                 key: `EPG.Gather.NID.${networkId}`,
                 name: `EPG Gather Network#${networkId}`,
                 isRerunnable: true,
-                fn: async () => {
+                fn: () => this._epgGatheringQueue.run(async () => {
                     log.info("Network#%d EPG gathering has started", networkId);
                     try {
                         await _.tuner.getEPG(service.channel);
@@ -203,7 +209,7 @@ export class Channel {
                         log.warn("Network#%d EPG gathering has failed [%s]", networkId, e);
                         throw new Error("EPG gathering failed");
                     }
-                },
+                }),
                 readyFn: async () => {
                     await common.sleep(100);
 
