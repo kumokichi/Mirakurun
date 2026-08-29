@@ -350,6 +350,28 @@ export const ServerConfigView: React.FC = () => {
                         </FormGroup>
 
                         <FormGroup
+                            label="EPG Gathering Concurrency"
+                            labelFor="epg-gathering-concurrency"
+                            helperText="EPG 収集ジョブの最大同時実行数"
+                        >
+                            <NumericInput
+                                id="epg-gathering-concurrency"
+                                value={editing.epgGatheringConcurrency ?? ""}
+                                placeholder="1"
+                                min={1}
+                                max={100}
+                                onValueChange={(value, _) => {
+                                    if (value === null) {
+                                        delete editing.epgGatheringConcurrency;
+                                    } else {
+                                        editing.epgGatheringConcurrency = value;
+                                    }
+                                    setEditing({ ...editing });
+                                }}
+                            />
+                        </FormGroup>
+
+                        <FormGroup
                             label="Max Buffer Bytes Before Ready (MB)"
                             labelFor="max-buffer-bytes"
                             helperText="番組イベント検出前の最大バッファサイズ (バイト) ※番組開始の頭が欠ける場合は増やす"

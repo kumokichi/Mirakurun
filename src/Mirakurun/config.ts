@@ -42,6 +42,7 @@ const {
     EVENT_END_TIMEOUT,
     PROGRAM_GC_JOB_SCHEDULE,
     EPG_GATHERING_JOB_SCHEDULE,
+    EPG_GATHERING_CONCURRENCY,
     EPG_RETRIEVAL_TIME,
     LOGO_DATA_INTERVAL,
     DISABLE_EIT_PARSING,
@@ -145,6 +146,9 @@ export async function loadServer(): Promise<Server> {
         if (typeof EPG_GATHERING_JOB_SCHEDULE !== "undefined" && isValidCronExpression(EPG_GATHERING_JOB_SCHEDULE)) {
             config.epgGatheringJobSchedule = EPG_GATHERING_JOB_SCHEDULE;
         }
+        if (typeof EPG_GATHERING_CONCURRENCY !== "undefined" && /^[1-9][0-9]*$/.test(EPG_GATHERING_CONCURRENCY)) {
+            config.epgGatheringConcurrency = parseInt(EPG_GATHERING_CONCURRENCY, 10);
+        }
         if (typeof EPG_RETRIEVAL_TIME !== "undefined" && /^[0-9]+$/.test(EPG_RETRIEVAL_TIME)) {
             config.epgRetrievalTime = parseInt(EPG_RETRIEVAL_TIME, 10);
         }
@@ -196,6 +200,16 @@ export async function loadServer(): Promise<Server> {
         if (typeof config.jobMaxStandby !== "number" || config.jobMaxStandby < 1 || config.jobMaxStandby > 100) {
             log.error("invalid server config property `jobMaxStandby`: %s", config.jobMaxStandby);
             delete config.jobMaxStandby;
+        }
+    }
+
+    // validate epgGatheringConcurrency
+    if (typeof config.epgGatheringConcurrency !== "undefined") {
+        if (typeof config.epgGatheringConcurrency !== "number" ||
+            !Number.isInteger(config.epgGatheringConcurrency) ||
+            config.epgGatheringConcurrency < 1 || config.epgGatheringConcurrency > 100) {
+            log.error("invalid server config property `epgGatheringConcurrency`: %s", config.epgGatheringConcurrency);
+            delete config.epgGatheringConcurrency;
         }
     }
 

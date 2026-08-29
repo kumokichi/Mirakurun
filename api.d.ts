@@ -276,6 +276,7 @@ export interface ConfigServer {
     eventEndTimeout?: number;
     programGCJobSchedule?: string;
     epgGatheringJobSchedule?: string;
+    epgGatheringConcurrency?: number;
     epgRetrievalTime?: number;
     logoDataInterval?: number;
     disableEITParsing?: boolean;
