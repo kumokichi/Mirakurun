@@ -1,0 +1,51 @@
+services:
+  mirakurun:
+    image: ${MIRAKURUN_IMAGE_REPOSITORY:-local/mirakurun}:${MIRAKURUN_IMAGE_TAG:-4.1.3-recpt1}
+
+    environment:
+      TZ: ${TZ:-Asia/Tokyo}
+      DISABLE_PCSCD: "${DISABLE_PCSCD:-1}"
+      DISABLE_B25_TEST: "${DISABLE_B25_TEST:-1}"
+      DOCKER_NETWORK: host
+      EPG_GATHERING_CONCURRENCY: "${EPG_GATHERING_CONCURRENCY:-1}"
+
+    # Remove entries that do not exist on the host.
+    devices:
+      - /dev/pt3video0:/dev/pt3video0
+      - /dev/pt3video1:/dev/pt3video1
+      - /dev/pt3video2:/dev/pt3video2
+      - /dev/pt3video3:/dev/pt3video3
+      - /dev/pt3video4:/dev/pt3video4
+      - /dev/pt3video5:/dev/pt3video5
+      - /dev/pt3video6:/dev/pt3video6
+      - /dev/pt3video7:/dev/pt3video7
+
+    volumes:
+      - ./run:/var/run
+      - ./opt:/opt
+      - ./config:/app-config
+      - ./data:/app-data
+      # Use the smart-card reader managed by pcscd on the host.
+      - /var/run/pcscd/pcscd.comm:/var/run/pcscd/pcscd.comm
+
+    container_name: mirakurun
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.recpt1
+      args:
+        LIBARIB25_COMMIT: ${LIBARIB25_COMMIT:-93ff3afd0a13f42724b20564873066f470825e78}
+        RECPT1_COMMIT: ${RECPT1_COMMIT:-77c7bce2527e1df45cc8667ede753d09de7b3e6c}
+    network_mode: host
+    cap_add:
+      - SYS_ADMIN
+      - SYS_NICE
+    device_cgroup_rules:
+      - "c *:* rmw"
+    tmpfs:
+      - /tmp
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: "1"
+        max-size: 10m
