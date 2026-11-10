@@ -19,10 +19,10 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import { promisify } from "util";
 import * as yieldableJSON from "yieldable-json";
 const parseAsync = promisify(yieldableJSON.parseAsync);
-const stringifyAsync = promisify(yieldableJSON.stringifyAsync);
 import Queue from "promise-queue";
 import * as apid from "../../api";
 import * as log from "./log";
+import { stringifyJSON } from "./json";
 
 interface Service extends apid.Service {
     /** @deprecated */
@@ -92,7 +92,7 @@ async function save(path: string, data: any[], integrity: string, retrying = fal
 
     return dbIOQueue.add(async () => {
         try {
-            await writeFile(path, await stringifyAsync(data));
+            await writeFile(path, await stringifyJSON(data));
         } catch (e) {
             if (retrying === false) {
                 // mkdir if not exists
