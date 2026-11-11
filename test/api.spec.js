@@ -129,6 +129,21 @@ describe("[api.spec] api.ts: responseJSON()", () => {
     assert.strictEqual(res.headers["content-length"], String(Buffer.byteLength(res.body)));
   });
 
+  it("escapes control characters in an object response", async () => {
+    const object = {
+      name: "番組名",
+      description: "前半\u001f後半",
+      whitespace: "tab\tline\ncarriage\rreturn"
+    };
+    handler = (req, res) => api.responseJSON(res, object);
+
+    const res = await request();
+
+    assert.strictEqual(res.body.includes("\u001f"), false);
+    assert.strictEqual(res.body.includes("\\u001f"), true);
+    assert.deepStrictEqual(JSON.parse(res.body), object);
+  });
+
   it("writes a large array in chunks with the same JSON", async () => {
     const body = createPrograms(3000);
     handler = (req, res) => api.responseJSON(res, body);

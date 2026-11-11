@@ -13,10 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-import { promisify } from "util";
 import { setImmediate as setImmediatePromise } from "timers/promises";
-import * as yieldableJSON from "yieldable-json";
-const stringifyAsync = promisify(yieldableJSON.stringifyAsync);
 import * as express from "express";
 import { stringifyJSONArray } from "./common";
 import * as log from "./log";
@@ -75,7 +72,7 @@ export async function responseJSON(res: express.Response, body: any): Promise<ex
         if (Array.isArray(body)) {
             await writeJSONArray(res, body);
         } else {
-            res.end(await stringifyAsync(body));
+            res.end(JSON.stringify(body));
         }
     } catch (e) {
         log.error("JSON response of `%s %s` has failed (%s: %s)", res.req?.method, res.req?.originalUrl, e.name, e.message);
